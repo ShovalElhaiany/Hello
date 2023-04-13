@@ -106,8 +106,8 @@ GitHub.sublime-settings
 !.vscode/extensions.json 
 .history
 
-Flask101
-Flask101.pub
+Flask_101
+Flask_101.pub
 db.sqlite3
 mysite/__pycache__/
 polls/__pycache__/

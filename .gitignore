@@ -106,10 +106,7 @@ GitHub.sublime-settings
 !.vscode/extensions.json 
 .history
 
-Flask_101
-Flask_101.pub
+Flask_101_key
+Flask_101_key.pub
 db.sqlite3
-mysite/__pycache__/
-polls/__pycache__/
-polls/migrations/__pycache__/
-polls/views/__pycache__/
+Flask_101/__pycache__/

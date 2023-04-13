@@ -4,7 +4,8 @@ import userManager
 import dal
 from flask_sqlalchemy import SQLAlchemy
 import sqlite3
-from flask_restful import Api, Resource
+from flask_restful import Api, Resource, fields, marshal_with
+import json
 
 app = Flask('__name__')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///collage.sqlite3'
@@ -21,25 +22,98 @@ fake_database = {
 }
 
 
+def readFromDB():
+    global fake_database
+
+    with open('jNames.txt', 'r') as reader:
+        lines = reader.readlines()
+        for line in lines:
+            key = int(line[0])
+            val = line[2:-1].replace('\'', '\"')
+            fake_database[key] = json.loads(val)
+
+
+def writeToDB():
+    with open('jNames.txt', 'w') as writer:
+        for key, val in fake_database.items():
+            writer.write(f'{key}:{val}\n')
+
+
+def updateDB(key, val):
+    with open('jNames.txt', 'r') as reader:
+        lines = reader.readlines()
+    with open('jNames.txt', 'w') as writer:
+        for line in lines:
+            if line[0] == str(key):
+                writer.write(f'{key}:{val}\n')
+            else:
+                writer.write(line)
+
+
+def deleteFromDB(key):
+    with open('jNames.txt', 'r') as reader:
+        lines = reader.readlines()
+    with open('jNames.txt', 'w') as writer:
+        for line in lines:
+            if line[0] != str(key):
+                writer.write(line)
+
+# def readFormDB():
+#     global fake_database
+#     with open('nameDB.txt', 'r') as reader:
+#         data = reader.read()
+#         fake_database = json.loads(data)
+
+
+# def writeToDB():
+#     with open('nameDB.txt', 'w') as writer:
+#         writer.write(json.dumps(fake_database))
+
+
+def generateId():
+    ids = fake_database.keys()
+    maxId = max(ids)
+    return int(maxId)+1
+
+
 class Names(Resource):
     def get(self):
         return fake_database
 
     def post(self):
         data = request.json
-        nameId = len(fake_database.keys())+1
+        nameId = generateId()
         fake_database[nameId] = {'name': data['name']}
+        writeToDB()
         return fake_database
-    
-    
 
 
 class Name(Resource):
     def get(self, pk):
         return fake_database[pk]
-    
-    def put(self):
+
+    def put(self, pk):
         data = request.json
+        fake_database[pk]['name'] = data['name']
+        # writeToDB()
+        updateDB(pk, fake_database[pk])
+        return fake_database[pk]
+
+    def delete(self, pk):
+        fake_database.pop(pk)
+        # writeToDB()
+        deleteFromDB(pk)
+        return fake_database
+
+
+student_fields = {
+    'id': fields.Integer,
+    'firstName': fields.String,
+    'lastName': fields.String,
+    'email': fields.String,
+    'age': fields.Integer,
+    'phone': fields.String,
+}
 
 
 class Student(db.Model):
@@ -57,6 +131,28 @@ class Student(db.Model):
         self.email = email
         self.age = age
         self.phone = phone
+
+
+class StudentDetails(Resource):
+    @marshal_with(student_fields)
+    def get(self, pk):
+        student = Student.query.get(pk)
+        return student
+
+
+class Studentlist(Resource):
+    @marshal_with(student_fields)
+    def get(self):
+        students = Student.query.all()
+        return students
+
+    def post(self):
+        data = request.json
+        newStudent = Student(firstName=data['firstName'], lastName=data['lastName'],
+                             email=data['email'], age=data['age'], phone=data['phone'], )
+        db.session.add(newStudent)
+        db.session.commit()
+        return redirect(url_for('Studentlist'))
 
 
 class Course(db.Model):
@@ -296,6 +392,10 @@ def logout():
 app.secret_key = 'flaskey'
 api.add_resource(Names, '/names')
 api.add_resource(Name, '/name/<int:pk>')
+api.add_resource(Studentlist, '/api/students')
+api.add_resource(StudentDetails, '/api/student/<int:pk>')
+# writeToDB()
+readFromDB()
 
 if __name__ == '__main__':
     app.run(debug=True)

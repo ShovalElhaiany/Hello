@@ -1,19 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
 </head>
-
 <body>
     <header>
         <h1>Student List</h1>
     </header>
     <main>
-        <a href="{{url_for('studentSingup')}}">new students sign up here</a>
+        <a href="{{url_for('studentSignup')}}">new students sign up here</a>
         <div>
             <p>
             <form action="{{url_for('searchByName')}}">
@@ -26,16 +24,19 @@
             </form>
             </p>
         </div>
-        <table>
+        <table border='1'>
             <tr>
                 <th>First Name</th>
                 <th>Last Name</th>
                 <th>Age</th>
                 <th>Phone</th>
                 <th>Email</th>
+                <th></th>
+                <th></th>
+                <th colspan="2">Courses</th>
             </tr>
             {% if students %}
-            <form action="{{url_for('deleteStudents')}}" method="post">
+            <form action="{{url_for('deleteStudents')}}" method="post" id="multidel">
                 {% for student in students %}
                 <tr>
                     <td>{{student.firstName}}</td>
@@ -54,14 +55,22 @@
                     </td> -->
 
 
-                    <td><input type="checkbox" name="id" value={{student.id}}></td>
+                    <td><input type="checkbox" name="id" value={{student.id}} form="multidel"></td>
+                    {% for course in student.course_id %}
+                        <td>{{course.name}}</td>
+                    {% endfor %}
                 </tr>
                 {% endfor %}
-                <input type="submit" value="delete selete selected" />
+                <tr border='0'>
+                    <td border='0'></td>
+                    <td border='0'></td>
+                    <td border='0'></td>
+                    <td border='0'></td>
+                    <td><input type="submit" value="delete selected"/>   </td>
+                </tr>
             </form>
             {% endif %}
         </table>
     </main>
 </body>
-
 </html>

@@ -1,5 +1,5 @@
 from flask import Flask, url_for, request, render_template, redirect, make_response, session, flash
-from forms import StudentForm
+from forms import StudentForm, CourseForm
 import userManager
 import dal
 from flask_sqlalchemy import SQLAlchemy
@@ -106,6 +106,9 @@ class Name(Resource):
         return fake_database
 
 
+courses = db.Table('Courses', db.Column('student_id', db.Integer, db.ForeignKey('student.student_id'),
+                   primary_key=True), db.Column('course_id', db.Integer, db.ForeignKey('course.course_id'), primary_key=True))
+
 student_fields = {
     'id': fields.Integer,
     'firstName': fields.String,
@@ -123,14 +126,18 @@ class Student(db.Model):
     email = db.Column(db.String(100))
     age = db.Column(db.Integer)
     phone = db.Column(db.String(100))
-    courses = db.relationship('Course', backref='student', lazy=True)
+    """One to Many"""
+    # courses = db.relationship('Course', backref='student', lazy=True, uselist=False)
+    course_id = db.relationship(
+        'Course', secondary=courses, backref=db.backref('students', lazy=True))
 
-    def __init__(self, firstName, lastName, email, age, phone) -> None:
+    def __init__(self, firstName, lastName, email, age, phone, courses) -> None:
         self.firstName = firstName
         self.lastName = lastName
         self.email = email
         self.age = age
         self.phone = phone
+        self.courses = courses
 
 
 class StudentDetails(Resource):
@@ -158,8 +165,8 @@ class Studentlist(Resource):
 class Course(db.Model):
     id = db.Column('course_id', db.Integer, primary_key=True)
     name = db.Column(db.String(100))
-    student_id = db.Column(
-        db.Integer, db.ForeignKey('student.student_id'), nullable=False)
+    # student_id = db.Column(
+    #     db.Integer, db.ForeignKey('student.student_id'), nullable=False)
 
     def __init__(self, name) -> None:
         self.name = name
@@ -254,12 +261,15 @@ def student(id):
     # student = dal.getStudentByEmail(email)
 
     student = Student.query.get(id)
-    form = StudentForm(obj=student)
-    return render_template('student.html', form=form)
+    if request.method == 'GET':
+        form = StudentForm(obj=student)
+        return render_template('student.html', form=form)
+    else:
+        form = StudentForm(obj=request.form)
 
 
-@app.route('/studentsingup', methods=['GET', 'POST'])
-def studentSingup():
+@app.route('/studentsignup', methods=['GET', 'POST'])
+def studentSignup():
     """Pulling information from the DB"""
     # firstname = request.args.get('firstName', '')
     # lastname = request.args.get('lastName', '')
@@ -273,11 +283,16 @@ def studentSingup():
         # dal.addStudent(student=student)
 
         studentForm = request.form  # POST
+        course_ids = [int(id) for id in studentForm.getlist('courses')]
         student = Student(studentForm['firstName'],
                           studentForm['lastName'],
                           studentForm['email'],
                           studentForm['age'],
-                          studentForm['phone'])
+                          studentForm['phone'],)
+        courses = Course.query.filter(Course.id.in_(course_ids)).all()
+        student.course_id.extend(courses)
+        db.session.add(student)
+        db.session.commit()
 
         """Adding a course model to the student table"""
         # course = Course(name="test course")
@@ -290,11 +305,15 @@ def studentSingup():
         #     cur.execute('insert into student (firstName, lastName, email, age, phone) values (?, ?, ?, ?, ?);',(student))
         #     con.commit()
         # return render_template('studentList.html', students=rows)
+
         return redirect(url_for('students'))
     else:
-        student = request.args  # GET
-        form = StudentForm(student)
-    return render_template('student.html', form=form)
+        # student = request.args  # GET
+        # form = StudentForm(student)
+
+        courses = Course.query.all()
+        form = StudentForm()
+        return render_template('student.html', form=form, courses=courses)
 
 
 """Another response"""
@@ -352,8 +371,9 @@ def searchByName():
 @app.route('/searchByMailType')
 def searchByMailType():
     emailExt = request.args.get('emailExt', '')
-    students = Student.query.filter(
-        Student.email.endswith(f'%{emailExt}%')).one_or_404()
+    students = Student.query.filter(Student.email.endswith(f'%{emailExt}%'))
+    """One or 404"""
+    # students = Student.query.filter(Student.email.endswith(f'%{emailExt}%')).one_or_404()
 
     """Retrieving information or 404"""
     # students = Student.query.get_or_404(id)
@@ -382,6 +402,49 @@ def logout():
     return redirect(url_for('login_get'))
 
 
+@app.route('/add_course')
+def add_course():
+    form = CourseForm()
+    return render_template('course.html', form=form)
+
+
+@app.route('/course/<int:id>', methods=['GET', 'POST'])
+def course(id):
+    course = Course.query.get(id)
+    if request.method == 'GET':
+        form = CourseForm(obj=course)
+        return render_template('course.html', form=form)
+    else:
+        course.name = request.form['name']
+        db.session.commit()
+        return redirect(url_for('courses'))
+
+
+@app.route('/deleteCourses', methods=['POST'])
+def deleteCourses():
+    ids = request.form.getlist('id')
+    courseToDelete = Course.query.filter(
+        Course, id.in_([int(id) for id in ids]))
+    for course in courseToDelete:
+        db.session.delete(course)
+    # db.session.commit()
+    return redirect(url_for('courses'))
+
+
+@app.route('/courses', methods=['GET', 'POST'])
+def courses():
+    if request.method == 'POST':
+        name = request.form['name']
+        course = Course(name=name)
+        db.session.add(course)
+        db.session.commit()
+
+        return redirect(url_for('courses'))
+    else:
+        courses = Course.query.all()
+        return render_template('courses.html', courses=courses)
+
+
 """A way to create separate URLS for functions"""
 # @app.add_url_rule('/', 'hello', hello)
 # @app.add_url_rule('/register', 'register', register, ['GET', 'POST'])
@@ -389,6 +452,7 @@ def logout():
 """create db tables"""
 # db.create_all()
 
+app.app_context().push()
 app.secret_key = 'flaskey'
 api.add_resource(Names, '/names')
 api.add_resource(Name, '/name/<int:pk>')

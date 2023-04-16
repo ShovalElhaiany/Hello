@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <header>
+        <h1> Course List:</h1>
+    </header>
+    <main>
+        <a href="{{url_for('studentSignup')}}">new students sign up here</a>
+        <div>
+            <p>
+                <form action="{{url_for('searchByName')}}">
+                    <input type="text" placeholder="search by name" name="name"/>
+                    <input type="submit" value="search"/>
+                </form>
+                <form action="{{url_for('searchByMailType')}}">
+                    <input type="text" placeholder="search by email extention" name="emailExt"/>
+                    <input type="submit" value="search"/>
+                </form>
+            </p>
+
+        </div>
+        <table>
+            <tr>
+                <th>Course Name</th>
+            </tr>
+        {% if courses %}
+                <form action="{{url_for("deleteCourses")}}" method="post" id="multidel">
+            {% for course in courses %}
+                <tr>
+                    <td>{{course.name}}</td>
+                    <td><a href="{{ url_for('course', id=course.id) }}">details</a></td>
+                    
+                    <td><input type="checkbox" name="id" value={{course.course_id}} form="multidel"></td>
+                </tr>
+                
+            {%endfor%} 
+            <tr>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td><input type="submit" value="delete selected"/>   </td>
+            </tr>
+            </form>
+        {% endif%}
+        </table>
+    </main>
+</body>
+</html>

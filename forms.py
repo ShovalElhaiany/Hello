@@ -9,3 +9,8 @@ class StudentForm(Form):
     email = EmailField(label='Email: ')
     age = IntegerField(label='Age: ')
     phone = StringField(label='Phone Number: ')
+
+
+class CourseForm(Form):
+    id = HiddenField()
+    name = StringField(label='Course name')

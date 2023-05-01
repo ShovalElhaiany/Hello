@@ -19,13 +19,19 @@
         {{ form.phone.label}}
         {{ form.phone}}</br>
         <select name="courses" id="courses" multiple>
-        {% if courses %}
-            {% for course in courses %}
-                <option value={{course.id}}>{{course.name}}</option>
-            {%endfor%}
-        {% endif %}
-            
-          </select>
+            {% if courses %}
+                {% for course in courses %}
+                    <option value={{course.id}}>{{course.name}}</option>
+                {%endfor%}
+            {% endif %}
+        </select>
+        <select name="languages" id="languages" multiple>
+            {% if languages %}
+                {% for language in languages %}
+                    <option value={{language.id}}>{{language.name}}</option>
+                {%endfor%}
+            {% endif %}
+        </select>
         <input type="submit" value="submit"/>
     </form>
 </body>

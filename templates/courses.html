@@ -11,6 +11,7 @@
         <h1> Course List:</h1>
     </header>
     <main>
+
         <a href="{{url_for('studentSignup')}}">new students sign up here</a>
         <div>
             <p>
@@ -19,37 +20,34 @@
                     <input type="submit" value="search"/>
                 </form>
                 <form action="{{url_for('searchByMailType')}}">
-                    <input type="text" placeholder="search by email extention" name="emailExt"/>
+                    <input type="text" placeholder="search by email extension" name="emailExt"/>
                     <input type="submit" value="search"/>
                 </form>
             </p>
-
         </div>
-        <table>
+
+        <table border='1'>
             <tr>
                 <th>Course Name</th>
-            </tr>
-        {% if courses %}
-                <form action="{{url_for("deleteCourses")}}" method="post" id="multidel">
-            {% for course in courses %}
-                <tr>
-                    <td>{{course.name}}</td>
-                    <td><a href="{{ url_for('course', id=course.id) }}">details</a></td>
-                    
-                    <td><input type="checkbox" name="id" value={{course.course_id}} form="multidel"></td>
-                </tr>
-                
-            {%endfor%} 
-            <tr>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td><input type="submit" value="delete selected"/>   </td>
-            </tr>
-            </form>
-        {% endif%}
+                <th>Language</th>
+                <th></th>
+                <th></th>
+            </tr colspan="2">
+            {% if courses %}
+                <form action="{{url_for("deleteCourses")}}" method="post">
+                    {% for course in courses %}
+                        <tr>
+                            <td>{{course.name}}</td>
+                            <td>{{language}}</td>
+                            <td><a href="{{ url_for('course', id=course.id) }}">details</a></td>
+                            <td><input type="checkbox" name="id" value={{course.id}}></td>
+                        </tr>
+                    {% endfor %} 
+                    <input type="submit" value="delete selected"/>
+                </form>
+            {% endif %}
         </table>
+
     </main>
 </body>
 </html>

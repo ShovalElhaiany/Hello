@@ -14,3 +14,7 @@ class StudentForm(Form):
 class CourseForm(Form):
     id = HiddenField()
     name = StringField(label='Course name')
+
+class LanguageForm(Form):
+    id = HiddenField()
+    name = StringField(label='Language name')
